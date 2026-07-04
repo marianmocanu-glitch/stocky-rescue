@@ -1,0 +1,12 @@
+name = "stocky-rescue-worker"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://stocky-rescue.pages.dev,http://localhost:5173"
+
+# BREVO_API_KEY and BREVO_LIST_ID are secrets: `wrangler secret put BREVO_API_KEY` etc.
+
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "stocky_rescue_events"

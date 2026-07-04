@@ -1,0 +1,21 @@
+{
+  "name": "@stocky-rescue/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "dev": "vite",
+    "build": "vite build && esbuild ../worker/src/pages-entry.ts --bundle --format=esm --outfile=dist/_worker.js",
+    "deploy": "wrangler pages deploy"
+  },
+  "dependencies": {
+    "client-zip": "^2.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.5.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

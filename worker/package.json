@@ -1,0 +1,16 @@
+{
+  "name": "@stocky-rescue/worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0",
+    "@cloudflare/workers-types": "^4.20260101.0"
+  }
+}

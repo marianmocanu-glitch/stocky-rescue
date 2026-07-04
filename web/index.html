@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stocky Rescue — export your Stocky suppliers & purchase orders before August 31</title>
+  <meta name="description" content="Stocky shuts down August 31, 2026 and suppliers can't be exported from its UI. This free open-source tool rescues your suppliers, purchase order history and stocktakes as CSV." />
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <h1>🛟 Stocky Rescue</h1>
+      <p class="tagline"><strong>Stocky shuts down on August 31, 2026.</strong> Shopify's own migration guide says
+      <em>"Suppliers can't be exported from Stocky."</em> They can — through Stocky's API. This free tool downloads
+      your suppliers, full purchase-order history and stock-adjustment history as clean CSV files. Everything runs in
+      your browser; your API key is never stored.</p>
+    </header>
+
+    <section id="state-input">
+      <form id="export-form">
+        <label>Your store
+          <input id="store-name" type="text" placeholder="your-store.myshopify.com" required
+                 pattern=".*\.myshopify\.com\s*$" autocomplete="off" />
+        </label>
+        <label>Your Stocky API key
+          <input id="api-key" type="password" placeholder="paste your key" required autocomplete="off" />
+        </label>
+        <details>
+          <summary>Where do I find my API key?</summary>
+          <ol>
+            <li>Open Stocky from your Shopify admin (Apps → Stocky).</li>
+            <li>Go to <strong>Preferences → API</strong> (stocky.shopifyapps.com/preferences/api).</li>
+            <li>Copy the API key shown there and paste it above.</li>
+          </ol>
+          <p>The key only allows <em>reading</em> your Stocky data. Revoke it in the same screen whenever you like.</p>
+        </details>
+        <button type="submit" id="rescue-btn">Rescue my data</button>
+        <p class="privacy">🔒 Your key is used only during the export, relayed straight to Stocky, and never stored or
+        logged. <a href="https://github.com/REPLACE_WITH_REPO" rel="noopener">Read the code</a>.</p>
+      </form>
+      <p id="input-error" class="error" role="alert" hidden></p>
+    </section>
+
+    <section id="state-progress" hidden>
+      <h2>Exporting…</h2>
+      <ul id="progress-list"></ul>
+      <p class="hint">Large stores can take a few minutes (Stocky allows 250 records per request). Keep this tab open.</p>
+    </section>
+
+    <section id="state-done" hidden>
+      <h2>✅ Your data is safe</h2>
+      <p id="done-summary"></p>
+      <button id="download-btn">Download ZIP</button>
+      <p id="done-errors" class="error" role="alert" hidden></p>
+      <hr />
+      <div id="optin">
+        <h3>What Shopify didn't keep: reorder suggestions & supplier management</h3>
+        <p>We're building the missing replacement — simple reorder points, purchase orders and supplier records at a
+        fair price for small retailers. Get launch access:</p>
+        <form id="optin-form">
+          <label class="sr-only" for="optin-email">Email address</label>
+          <input id="optin-email" type="email" placeholder="you@store.com" required />
+          <button type="submit">Notify me</button>
+        </form>
+        <p id="optin-msg" hidden></p>
+      </div>
+    </section>
+
+    <footer>
+      <h2>FAQ</h2>
+      <dl>
+        <dt>Is this affiliated with Shopify?</dt><dd>No. It's an independent, free, open-source tool.</dd>
+        <dt>What exactly is exported?</dt><dd>suppliers.csv, purchase_orders.csv, purchase_order_line_items.csv,
+        stock_adjustments.csv, stock_adjustment_items.csv, tax_types.csv + a README.</dd>
+        <dt>What is NOT exported?</dt><dd>Anything Stocky's API doesn't expose — e.g. supplier lead times/MOQs aren't
+        available through the API. Reports you can already export from Stocky's UI aren't duplicated here.</dd>
+        <dt>Why free?</dt><dd>Because losing your supplier records to an app shutdown is unfair, and because we hope
+        you'll try our paid replacement app later. No strings attached.</dd>
+      </dl>
+    </footer>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

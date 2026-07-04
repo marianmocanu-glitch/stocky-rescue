@@ -1,0 +1,14 @@
+name = "stocky-rescue"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-06-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://stocky-rescue.pages.dev"
+
+# BREVO_API_KEY and BREVO_LIST_ID are Pages secrets:
+#   wrangler pages secret put BREVO_API_KEY --project-name stocky-rescue
+#   wrangler pages secret put BREVO_LIST_ID --project-name stocky-rescue
+
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "stocky_rescue_events"
