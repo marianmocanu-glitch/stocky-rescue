@@ -82,15 +82,42 @@ describe('fetchAll', () => {
     expect(fetcher).toHaveBeenCalledTimes(8); // 1 try + 7 retries
   });
 
-  it('throws instead of looping forever when since_id does not advance', async () => {
-    const fetcher = vi.fn(async () => pageResponse('suppliers', ids(1, 250))); // same full page forever
-    await expect(fetchAll(suppliers, CREDS, PROXY, () => {}, fetcher as typeof fetch, noSleep)).rejects.toThrow(/did not advance/);
-    expect(fetcher).toHaveBeenCalledTimes(2); // initial + one stalled repeat, then abort
+  it('falls back to offset pagination when since_id does not advance', async () => {
+    const calls: Record<string, string>[] = [];
+    const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      calls.push(body.params);
+      if (body.params.offset === undefined) return pageResponse('suppliers', ids(1, 250)); // cursor mode: always same page
+      if (body.params.offset === '250') return pageResponse('suppliers', ids(251, 300)); // offset mode: short page → done
+      return pageResponse('suppliers', []);
+    });
+    const rows = await fetchAll(suppliers, CREDS, PROXY, () => {}, fetcher as typeof fetch, noSleep);
+    expect(rows).toHaveLength(300); // 250 from cursor + 50 new from offset, dupes removed
+    expect(calls.some((p) => p.offset === '250')).toBe(true);
   });
 
-  it('throws when a full page has no numeric ids', async () => {
-    const rows = Array.from({ length: 250 }, () => ({ name: 'x' }));
-    const fetcher = vi.fn(async () => pageResponse('suppliers', rows));
-    await expect(fetchAll(suppliers, CREDS, PROXY, () => {}, fetcher as typeof fetch, noSleep)).rejects.toThrow(/no numeric ids/);
+  it('falls back to offset pagination when a full page has no numeric ids', async () => {
+    const noIdRows = Array.from({ length: 250 }, (_, i) => ({ name: `row${i}` }));
+    const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      if (body.params.offset === undefined) return pageResponse('suppliers', noIdRows);
+      if (body.params.offset === '250') return pageResponse('suppliers', [{ name: 'last' }]); // short → done
+      return pageResponse('suppliers', []);
+    });
+    const rows = await fetchAll(suppliers, CREDS, PROXY, () => {}, fetcher as typeof fetch, noSleep);
+    expect(rows).toHaveLength(251);
+  });
+
+  it('dedupes overlapping rows by id when offset fallback re-fetches', async () => {
+    const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      if (body.params.offset === undefined) return pageResponse('suppliers', ids(1, 250));
+      if (body.params.offset === '250') return pageResponse('suppliers', [...ids(200, 250), ...ids(251, 260)]); // overlap 200-250 + new, short page
+      return pageResponse('suppliers', []);
+    });
+    const rows = await fetchAll(suppliers, CREDS, PROXY, () => {}, fetcher as typeof fetch, noSleep);
+    const idList = rows.map((r) => r.id as number);
+    expect(new Set(idList).size).toBe(idList.length); // no duplicate ids
+    expect(rows).toHaveLength(260);
   });
 });

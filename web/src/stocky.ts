@@ -50,18 +50,48 @@ export async function fetchAll(
 ): Promise<Record<string, unknown>[]> {
   const all: Record<string, unknown>[] = [];
   let sinceId: number | undefined;
+  let mode: 'cursor' | 'offset' = 'cursor';
+  let offset = 0;
+  let fetches = 0;
   for (;;) {
+    if (++fetches > 800) throw new Error(`Pagination cap reached for ${def.name}`);
     const params: Record<string, string> = { limit: String(PAGE) };
-    if (sinceId !== undefined) params.since_id = String(sinceId);
+    if (mode === 'cursor' && sinceId !== undefined) params.since_id = String(sinceId);
+    if (mode === 'offset') params.offset = String(offset);
     const page = await fetchPage(def, creds, proxyUrl, params, fetcher, sleep);
     all.push(...page);
     onProgress(all.length);
-    if (page.length < PAGE) return all;
-    const pageIds = page.map((r) => Number(r.id)).filter((n) => Number.isFinite(n));
-    if (pageIds.length === 0) throw new Error(`Cannot paginate ${def.name}: page has no numeric ids`);
-    const next = def.cursor === 'asc' ? Math.max(...pageIds) : Math.min(...pageIds);
-    if (next === sinceId) throw new Error(`Pagination stalled for ${def.name}: since_id ${sinceId} did not advance`);
-    sinceId = next;
+    if (page.length < PAGE) break;
+    if (mode === 'cursor') {
+      const pageIds = page.map((r) => Number(r.id)).filter((n) => Number.isFinite(n));
+      const next = pageIds.length === 0
+        ? undefined
+        : def.cursor === 'asc' ? Math.max(...pageIds) : Math.min(...pageIds);
+      if (next === undefined || next === sinceId) {
+        // Stall detected: if ids exist and stalled, the page is a duplicate — remove it before switching.
+        if (next !== undefined) {
+          // next === sinceId: definite duplicate page — drop it
+          all.splice(all.length - page.length);
+          onProgress(all.length);
+        }
+        // For no-id case (next === undefined) the page is unknown; keep it, offset from current all.length.
+        mode = 'offset';
+        offset = all.length;
+      } else {
+        sinceId = next;
+      }
+    } else {
+      offset += page.length;
+    }
     await sleep(150);
   }
+  // Dedupe by numeric id, keep first occurrence; rows without numeric ids pass through unchanged.
+  const seen = new Set<number>();
+  return all.filter((r) => {
+    const id = Number(r.id);
+    if (!Number.isFinite(id)) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
